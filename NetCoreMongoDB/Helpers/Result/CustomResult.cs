@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections;
+using System.Text.Json;
 
 namespace NetCoreMongoDB.Helpers.Result;
 
@@ -19,12 +21,78 @@ public class CustomResult : ActionResult
     {
         context.HttpContext.Response.ContentType = "application/json";
         context.HttpContext.Response.StatusCode = _httpStatus;
-        var result = new ResultDetail()
+
+        string resultDetail;
+        if (_result is Models.Result result && result.Data is IList data)
         {
-            Message = _message,
-            StatusCode = _httpStatus,
-            Result = _result
-        }.ToString();
-        await context.HttpContext.Response.WriteAsync(result);
+            var totalRecord = result.TotalRecord != 0 ? result.TotalRecord : data.Count;
+            var pageCount = result.PageCount != 0 ? result.PageCount : data.Count;
+            var page = result.Page != 0 ? result.Page : 1;
+
+            resultDetail = new ResultDetail
+            {
+                Message = _message,
+                StatusCode = _httpStatus,
+                Result = new ResultResponse
+                {
+                    TotalRecord = totalRecord,
+                    TotalPages = (int)Math.Ceiling(totalRecord / (double)pageCount),
+                    PageCount = pageCount,
+                    Page = page,
+                    TotalInPage = data.Count,
+                    Data = data
+                }
+            }.ToString();
+        }
+        else
+        {
+            resultDetail = new ResultDetail()
+            {
+                Message = _message,
+                StatusCode = _httpStatus,
+                Result = _result
+            }.ToString();
+        }
+
+        await context.HttpContext.Response.WriteAsync(resultDetail);
+    }
+}
+
+public class ResultResponse
+{
+    public long TotalRecord { get; set; }
+    public int TotalPages { get; set; }
+    public int PageCount { get; set; }
+    public int Page { get; set; }
+    public int TotalInPage { get; set; }
+    public object Data { get; set; }
+}
+
+public class ResultDetail
+{
+    public int StatusCode { get; set; }
+    public string Message { get; set; } = null!;
+    public object Result { get; set; } = null!;
+
+    public override string ToString()
+    {
+        if (Result == null)
+            return JsonSerializer.Serialize(new
+            {
+                statusCode = StatusCode,
+                message = Message
+            });
+
+        var jsonSerializerOptions = new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        return JsonSerializer.Serialize(new
+        {
+            statusCode = StatusCode,
+            message = Message,
+            result = Result
+        }, jsonSerializerOptions);
     }
 }

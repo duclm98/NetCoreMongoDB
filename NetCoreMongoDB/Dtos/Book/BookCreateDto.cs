@@ -2,8 +2,8 @@
 
 public class BookCreateDto
 {
-    public string BookName { get; set; } = null!;
-    public decimal Price { get; set; }
-    public string Category { get; set; } = null!;
-    public string Author { get; set; } = null!;
+    public string BookName { get; set; }
+    public int Price { get; set; }
+    public List<string> CategoryIds { get; set; } = new();
+    public string Author { get; set; }
 }

@@ -4,10 +4,12 @@ namespace NetCoreMongoDB.Helpers.Exceptions;
 
 public class CustomExceptionMiddleware
 {
+    private readonly ILogger logger;
     private readonly RequestDelegate next;
 
-    public CustomExceptionMiddleware(RequestDelegate next)
+    public CustomExceptionMiddleware(RequestDelegate next, ILogger<CustomExceptionMiddleware> logger)
     {
+        this.logger = logger;
         this.next = next;
     }
 
@@ -24,6 +26,7 @@ public class CustomExceptionMiddleware
         catch (Exception exceptionObj)
         {
             await HandleExceptionAsync(context, exceptionObj);
+            logger.LogError(exceptionObj.ToString());
         }
     }
 
