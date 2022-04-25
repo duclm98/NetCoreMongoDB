@@ -27,13 +27,16 @@ public class DatabaseContext
     public MongoClient Client => _client;
     public IMongoDatabase Database => _database;
 
-    public IFindFluent<T, T> Query<T>(FilterDefinition<T> filterDefinition, SortDefinition<T> sortDefinition = null) where T : Base
+    public IMongoCollection<T> Collection<T>() where T : Base =>
+        _database.GetCollection<T>(typeof(T).Name);
+
+    public IFindFluent<T, T> Query<T>(FilterDefinition<T> filterDefinition = null) where T : Base
     {
         var newFilterDefinition = Builders<T>.Filter.Eq(x => x.DeletedAt, null);
         if (filterDefinition != null)
             newFilterDefinition &= filterDefinition;
         var mongoCollection = _database.GetCollection<T>(typeof(T).Name);
-        return mongoCollection.Find(newFilterDefinition).Sort(sortDefinition);
+        return mongoCollection.Find(newFilterDefinition);
     }
 
     public async Task<T> FindAsync<T>(string id) where T : Base

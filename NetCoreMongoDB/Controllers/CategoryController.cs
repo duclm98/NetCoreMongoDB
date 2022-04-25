@@ -17,9 +17,9 @@ public class CategoryController : ControllerBase
     public async Task<IActionResult> GetAll() =>
         await _categoryService.GetAll();
 
-    //[HttpGet("{bookId:length(24)}")]
-    //public async Task<IActionResult> GetSingle(string bookId) =>
-    //    await _bookService.GetSingle(bookId);
+    [HttpGet("{categoryId:length(24)}")]
+    public async Task<IActionResult> GetSingle(string categoryId) =>
+        await _categoryService.GetSingle(categoryId);
 
     [HttpPost]
     public async Task<IActionResult> Create(CategoryCreateDto categoryCreateDto) =>

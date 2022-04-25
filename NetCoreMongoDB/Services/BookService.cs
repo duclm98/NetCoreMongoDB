@@ -42,7 +42,8 @@ public class BooksService : IBookService
         if (query.Price != 0)
             filterDefinition &= filterDefinitionBuilder.Eq(x => x.Price, query.Price);
 
-        var bookQuery = _context.Query(filterDefinition, Builders<Book>.Sort.Descending(x => x.CreatedAt));
+        var bookQuery = _context.Query(filterDefinition)
+            .SortByDescending(x => x.CreatedAt);
 
         var totalRecord = await bookQuery.CountDocumentsAsync();
         var books = await bookQuery.Skip((query.Page - 1) * query.PageCount).Limit(query.PageCount).ToListAsync();
@@ -59,22 +60,29 @@ public class BooksService : IBookService
 
     public async Task<IActionResult> GetSingle(string bookId)
     {
+        //var bookCollection = _context.Collection<Book>();
+        //var result = await bookCollection.Aggregate()
+        //    .Lookup("Category", "CategoryId", "_id", "Category")
+        //    .FirstOrDefaultAsync();
+
         var book = await _context.FindAsync<Book>(bookId);
         if (book is null)
-            throw new CustomException("Không tìm thấy sách", 404);
+            throw new CustomException("Sách không tồn tại", 404);
         var booksDto = _mapper.Map<BookDto>(book);
         return new CustomResult("Thành công", booksDto);
     }
 
     public async Task<IActionResult> Create(BookCreateDto bookCreateDto)
     {
-        var categories = await _context.Query(Builders<Category>.Filter.Where(x => bookCreateDto.CategoryIds.Contains(x.Id)))
-            .ToListAsync();
+        var category = await _context.FindAsync<Category>(bookCreateDto.CategoryId);
+        if (category == null)
+            throw new CustomException("Danh mục sách không tồn tại", 404);
+
         var book = new Book
         {
             BookName = bookCreateDto.BookName,
             Price = bookCreateDto.Price,
-            Categories = categories,
+            CategoryId = category.Id,
             Author = bookCreateDto.Author
         };
         await _context.InsertAsync(book);
